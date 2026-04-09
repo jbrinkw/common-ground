@@ -26,7 +26,7 @@ export function SideChatPanel({
   rejectionCount: number;
   suggestedRevision?: string;
   initialMessages: SideChatMessage[];
-  onSubmitRevision: (content: string) => void;
+  onSubmitRevision: (content: string) => Promise<void>;
   onAbandon: () => void;
 }) {
   const [messages, setMessages] = useState<SideChatMessage[]>(initialMessages);
@@ -35,6 +35,13 @@ export function SideChatPanel({
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (
+      !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+      !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    ) {
+      return;
+    }
+
     const supabase = createClient();
 
     const channel = supabase
@@ -45,6 +52,8 @@ export function SideChatPanel({
           event: "INSERT",
           schema: "public",
           table: "side_chat_messages",
+          // Supabase Realtime only supports single-column filters, so we
+          // filter by room_id server-side and narrow by user + session client-side.
           filter: `room_id=eq.${roomId}`,
         },
         (payload) => {
@@ -71,13 +80,17 @@ export function SideChatPanel({
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isSubmitting) return;
     setIsSubmitting(true);
-    onSubmitRevision(input.trim());
+    const submittedContent = input.trim();
     setInput("");
-    setIsSubmitting(false);
+    try {
+      await onSubmitRevision(submittedContent);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const atMaxRejections = rejectionCount >= MAX_REJECTIONS;

@@ -18,7 +18,21 @@ export function MainThread({
   const [messages, setMessages] = useState<MainMessage[]>(initialMessages);
   const bottomRef = useRef<HTMLDivElement>(null);
 
+  // Sync from parent when initialMessages changes (mock polling mode)
   useEffect(() => {
+    setMessages(initialMessages);
+  }, [initialMessages]);
+
+  useEffect(() => {
+    // Skip Realtime subscription when Supabase isn't configured (mock mode
+    // uses polling from the parent page instead).
+    if (
+      !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+      !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    ) {
+      return;
+    }
+
     const supabase = createClient();
 
     const channel = supabase

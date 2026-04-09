@@ -6,6 +6,54 @@ import { DEFAULT_RUBRIC_SYSTEM_PROMPT } from "./rubrics/default_v1";
 
 const MODEL = "claude-sonnet-4-6-20250514";
 
+/**
+ * Mock moderator for local dev when ANTHROPIC_API_KEY is not set.
+ * Routes messages through both approve and revise paths based on content
+ * so the full UI flow can be tested without real API keys.
+ */
+function mockModerate(draft: string): ModeratorVerdict {
+  const lower = draft.toLowerCase();
+
+  // Trigger rejection for testing
+  if (lower.includes("reject") || lower.includes("bad")) {
+    return {
+      verdict: "revise",
+      violated_rules: ["inflammatory_language"],
+      explanation:
+        "Your message contains language that could escalate the conversation. " +
+        "Try rephrasing to focus on the substance of your point without charged words.",
+      suggested_revision: draft.replace(/reject|bad/gi, "[constructive term]"),
+      proposed_fact_updates: [],
+    };
+  }
+
+  // Trigger rejection for long messages
+  if (draft.length > 500) {
+    return {
+      verdict: "revise",
+      violated_rules: ["message_length"],
+      explanation:
+        "Your message is quite long. Try to be more concise — shorter messages " +
+        "tend to be more productive in a disagreement.",
+      proposed_fact_updates: [],
+    };
+  }
+
+  // Extract facts from "fact: ..." prefix
+  const proposed_fact_updates: string[] = [];
+  const factMatch = draft.match(/fact:\s*(.+)/i);
+  if (factMatch) {
+    proposed_fact_updates.push(factMatch[1].trim());
+  }
+
+  return {
+    verdict: "approve",
+    violated_rules: [],
+    explanation: "Message approved.",
+    proposed_fact_updates,
+  };
+}
+
 export async function moderateMessage(args: {
   draft: string;
   recentMainMessages: Array<{ sender: string; content: string }>;
@@ -15,14 +63,9 @@ export async function moderateMessage(args: {
 }): Promise<ModeratorVerdict> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
 
-  // If no API key is configured, approve everything (local dev mode)
+  // Use mock moderator when no API key is configured (local dev)
   if (!apiKey) {
-    return {
-      verdict: "approve",
-      violated_rules: [],
-      explanation: "Auto-approved (no ANTHROPIC_API_KEY configured)",
-      proposed_fact_updates: [],
-    };
+    return mockModerate(args.draft);
   }
 
   const client = new Anthropic({ apiKey });
@@ -59,23 +102,19 @@ export async function moderateMessage(args: {
 
   const userContent = contextParts.join("\n\n");
 
-  const startTime = Date.now();
-
-  const response = await client.messages.create({
-    model: MODEL,
-    max_tokens: 1024,
-    system: DEFAULT_RUBRIC_SYSTEM_PROMPT,
-    messages: [{ role: "user", content: userContent }],
-  });
-
-  const latencyMs = Date.now() - startTime;
-
-  // Extract text content from the response
-  const textBlock = response.content.find((block) => block.type === "text");
-  const rawText = textBlock && "text" in textBlock ? textBlock.text : "";
-
   try {
-    // Try to parse JSON from the response, handling markdown code fences
+    const response = await client.messages.create({
+      model: MODEL,
+      max_tokens: 1024,
+      system: DEFAULT_RUBRIC_SYSTEM_PROMPT,
+      messages: [{ role: "user", content: userContent }],
+    });
+
+    // Extract text content from the response
+    const textBlock = response.content.find((block) => block.type === "text");
+    const rawText = textBlock && "text" in textBlock ? textBlock.text : "";
+
+    // Parse JSON from the response, handling markdown code fences
     const jsonStr = rawText.replace(/```json\n?|\n?```/g, "").trim();
     const parsed = JSON.parse(jsonStr) as ModeratorVerdict;
 
@@ -85,14 +124,15 @@ export async function moderateMessage(args: {
       explanation: parsed.explanation ?? "",
       suggested_revision: parsed.suggested_revision,
       proposed_fact_updates: parsed.proposed_fact_updates ?? [],
-      _latencyMs: latencyMs,
-    } as ModeratorVerdict & { _latencyMs: number };
-  } catch {
-    // If we can't parse the response, approve with a warning
+    };
+  } catch (error) {
+    console.error("Moderator error:", error);
+    // Fail-open: approve the message if the API call or parsing fails.
+    // This prevents blocking conversation due to transient API issues.
     return {
       verdict: "approve",
       violated_rules: [],
-      explanation: "Moderator response could not be parsed — auto-approved.",
+      explanation: "Moderator unavailable — message auto-approved.",
       proposed_fact_updates: [],
     };
   }

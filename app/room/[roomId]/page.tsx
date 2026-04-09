@@ -1,12 +1,17 @@
 "use client";
 
 import { useParams, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { useCallback, useEffect, useState } from "react";
 import type { MainMessage, EstablishedFact } from "@/lib/types";
 import { MainThread } from "@/components/MainThread";
 import { FactsSidebar } from "@/components/FactsSidebar";
 import { Composer } from "@/components/Composer";
+import { getRoomData } from "./actions";
+
+const supabaseConfigured =
+  typeof window !== "undefined" &&
+  !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
+  !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 export default function RoomPage() {
   const params = useParams();
@@ -19,9 +24,11 @@ export default function RoomPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function loadInitialData() {
-      try {
+  const loadData = useCallback(async () => {
+    try {
+      if (supabaseConfigured) {
+        // Use Supabase client directly
+        const { createClient } = await import("@/lib/supabase/client");
         const supabase = createClient();
 
         const [messagesResult, factsResult] = await Promise.all([
@@ -42,17 +49,33 @@ export default function RoomPage() {
 
         setMessages(messagesResult.data ?? []);
         setFacts(factsResult.data ?? []);
-      } catch (err) {
-        const message =
-          err instanceof Error ? err.message : "Failed to load room data";
-        setError(message);
-      } finally {
-        setLoading(false);
+      } else {
+        // Use mock store via server action
+        const data = await getRoomData(roomId);
+        if (data) {
+          setMessages(data.messages);
+          setFacts(data.facts);
+        }
       }
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Failed to load room data";
+      setError(message);
+    } finally {
+      setLoading(false);
     }
-
-    loadInitialData();
   }, [roomId]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // In mock mode, poll for updates since there's no Realtime
+  useEffect(() => {
+    if (supabaseConfigured) return;
+    const interval = setInterval(loadData, 1000);
+    return () => clearInterval(interval);
+  }, [loadData]);
 
   if (loading) {
     return (
@@ -87,6 +110,7 @@ export default function RoomPage() {
             <h1 className="font-semibold">CommonGround</h1>
             <p className="text-xs text-muted-foreground">
               Room {roomId.slice(0, 8)}... &middot; You are User {userId}
+              {!supabaseConfigured && " (mock mode)"}
             </p>
           </div>
         </div>
