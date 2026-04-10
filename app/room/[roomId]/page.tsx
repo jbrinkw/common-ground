@@ -10,6 +10,7 @@ import { FactsSidebar } from "@/components/FactsSidebar";
 import { Composer } from "@/components/Composer";
 import { TypingIndicator } from "@/components/TypingIndicator";
 import { ConversationSummary } from "@/components/ConversationSummary";
+import { RubricSelector } from "@/components/RubricSelector";
 import { markRoomVisited, archiveRoom } from "./actions";
 
 export default function RoomPage() {
@@ -25,6 +26,7 @@ export default function RoomPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [roomTopic, setRoomTopic] = useState<string | null>(null);
+  const [roomRubricId, setRoomRubricId] = useState<string>("default_v1");
   const [showFacts, setShowFacts] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
 
@@ -60,6 +62,7 @@ export default function RoomPage() {
       const otherProfile = isUserA ? room.user_b_profile : room.user_a_profile;
       setOtherUserName(otherProfile?.display_name ?? "Waiting for partner...");
       setRoomTopic(room.topic ?? null);
+      setRoomRubricId(room.rubric_id ?? "default_v1");
 
       if (!otherProfile?.display_name) {
         setInviteCode(room.invite_code ?? null);
@@ -146,6 +149,14 @@ export default function RoomPage() {
             </div>
           </div>
           <div className="flex items-center gap-1">
+            {userId && (
+              <RubricSelector
+                roomId={roomId}
+                currentUserId={userId}
+                currentRubricId={roomRubricId}
+                onRubricChange={setRoomRubricId}
+              />
+            )}
             <ConversationSummary roomId={roomId} />
             <button
               className="text-xs text-muted-foreground hover:text-foreground min-h-[44px] px-2 transition-colors"

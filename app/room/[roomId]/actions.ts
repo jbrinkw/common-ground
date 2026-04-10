@@ -57,7 +57,7 @@ export async function submitDraft(
     // Verify user is a participant
     const { data: room } = await supabase
       .from("rooms")
-      .select("id, topic")
+      .select("id, topic, rubric_id")
       .eq("id", roomId)
       .or(`user_a_id.eq.${userId},user_b_id.eq.${userId}`)
       .single();
@@ -109,7 +109,7 @@ export async function submitDraft(
       recentMainMessages: mainMessages,
       establishedFacts,
       sideChatHistory: sideChatHistory.length > 0 ? sideChatHistory : undefined,
-      rubricId: "default_v1",
+      rubricId: room.rubric_id ?? "default_v1",
       topic: room.topic ?? undefined,
     });
     const latencyMs = Date.now() - startTime;
@@ -473,5 +473,104 @@ export async function deleteRoom(roomId: string): Promise<{ success: boolean }> 
     return { success: true };
   } catch {
     return { success: false };
+  }
+}
+
+export async function proposeRubricChange(
+  roomId: string,
+  rubricId: string
+): Promise<{ proposalId: string } | { error: string }> {
+  try {
+    const { supabase, user } = await getAuthUser();
+
+    // Verify participant
+    const { data: room } = await supabase
+      .from("rooms")
+      .select("id")
+      .eq("id", roomId)
+      .or(`user_a_id.eq.${user.id},user_b_id.eq.${user.id}`)
+      .single();
+
+    if (!room) return { error: "Not a participant of this room" };
+
+    // Cancel any existing pending proposals for this room by this user
+    await supabase
+      .from("rubric_proposals")
+      .update({ status: "cancelled", resolved_at: new Date().toISOString() })
+      .eq("room_id", roomId)
+      .eq("proposed_by", user.id)
+      .eq("status", "pending");
+
+    const { data, error } = await supabase
+      .from("rubric_proposals")
+      .insert({
+        room_id: roomId,
+        proposed_by: user.id,
+        rubric_id: rubricId,
+      })
+      .select("id")
+      .single();
+
+    if (error) throw error;
+    return { proposalId: data.id };
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Failed to propose rubric change";
+    return { error: message };
+  }
+}
+
+export async function respondToRubricProposal(
+  proposalId: string,
+  accept: boolean
+): Promise<{ success: boolean } | { error: string }> {
+  try {
+    const { supabase, user } = await getAuthUser();
+
+    // Fetch the proposal
+    const { data: proposal, error: fetchError } = await supabase
+      .from("rubric_proposals")
+      .select("id, room_id, rubric_id, proposed_by, status")
+      .eq("id", proposalId)
+      .single();
+
+    if (fetchError || !proposal) return { error: "Proposal not found" };
+    if (proposal.status !== "pending") return { error: "Proposal is no longer pending" };
+    if (proposal.proposed_by === user.id) return { error: "Cannot respond to your own proposal" };
+
+    // Verify responder is a participant
+    const { data: room } = await supabase
+      .from("rooms")
+      .select("id")
+      .eq("id", proposal.room_id)
+      .or(`user_a_id.eq.${user.id},user_b_id.eq.${user.id}`)
+      .single();
+
+    if (!room) return { error: "Not a participant of this room" };
+
+    const newStatus = accept ? "accepted" : "declined";
+
+    const { error: updateError } = await supabase
+      .from("rubric_proposals")
+      .update({ status: newStatus, resolved_at: new Date().toISOString() })
+      .eq("id", proposalId);
+
+    if (updateError) throw updateError;
+
+    if (accept) {
+      // Apply the new rubric to the room
+      const { error: roomUpdateError } = await supabase
+        .from("rooms")
+        .update({ rubric_id: proposal.rubric_id })
+        .eq("id", proposal.room_id);
+
+      if (roomUpdateError) throw roomUpdateError;
+    }
+
+    return { success: true };
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Failed to respond to proposal";
+    return { error: message };
   }
 }
