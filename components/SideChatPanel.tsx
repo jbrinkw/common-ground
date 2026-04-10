@@ -88,7 +88,7 @@ export function SideChatPanel({
   const atMaxRejections = rejectionCount >= MAX_REJECTIONS;
 
   return (
-    <div className="border-t bg-card flex flex-col shrink-0">
+    <div className="border-t bg-card flex flex-col shrink-0 max-h-[50dvh]">
       <div className="p-3 border-b flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="font-semibold text-sm">Revise Your Message</span>
@@ -116,7 +116,7 @@ export function SideChatPanel({
         </div>
       </div>
 
-      <ScrollArea className="flex-1 max-h-60 p-4">
+      <ScrollArea className="flex-1 min-h-0 p-4">
         <div className="space-y-3">
           {messages.map((msg) => (
             <div
