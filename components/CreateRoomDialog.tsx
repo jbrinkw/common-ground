@@ -15,6 +15,7 @@ import { createRoom } from "@/app/room/[roomId]/actions";
 
 export function CreateRoomDialog() {
   const router = useRouter();
+  const [topic, setTopic] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const [result, setResult] = useState<{
     inviteCode: string;
@@ -26,7 +27,7 @@ export function CreateRoomDialog() {
     setIsCreating(true);
     setError(null);
 
-    const res = await createRoom();
+    const res = await createRoom(topic || undefined);
     if ("error" in res) {
       setError(res.error);
       setIsCreating(false);
@@ -87,11 +88,17 @@ export function CreateRoomDialog() {
   }
 
   return (
-    <>
-      <Button onClick={handleCreate} disabled={isCreating}>
+    <div className="flex flex-col gap-2">
+      <Input
+        value={topic}
+        onChange={(e) => setTopic(e.target.value)}
+        placeholder="What's this about? (optional)"
+        className="min-h-[44px]"
+      />
+      <Button onClick={handleCreate} disabled={isCreating} className="w-full">
         {isCreating ? "Creating..." : "Create Room"}
       </Button>
       {error && <p className="text-sm text-destructive">{error}</p>}
-    </>
+    </div>
   );
 }
