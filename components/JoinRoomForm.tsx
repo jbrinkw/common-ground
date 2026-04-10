@@ -29,18 +29,18 @@ export function JoinRoomForm() {
   };
 
   return (
-    <form onSubmit={handleJoin} className="flex gap-2">
+    <form onSubmit={handleJoin} className="flex flex-wrap gap-2">
       <Input
         value={code}
         onChange={(e) => setCode(e.target.value.toUpperCase())}
-        placeholder="Enter invite code"
-        className="font-mono tracking-wider"
+        placeholder="Invite code"
+        className="font-mono tracking-wider w-28 sm:w-36 min-h-[44px]"
         maxLength={8}
       />
-      <Button type="submit" variant="outline" disabled={loading || !code.trim()}>
+      <Button type="submit" variant="outline" disabled={loading || !code.trim()} className="min-h-[44px]">
         {loading ? "Joining..." : "Join"}
       </Button>
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {error && <p className="text-sm text-destructive w-full">{error}</p>}
     </form>
   );
 }

@@ -22,13 +22,13 @@ export default async function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen p-4 md:p-8 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-8">
+    <div className="min-h-dvh p-4 md:p-8 max-w-5xl mx-auto">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-bold">CommonGround</h1>
           <p className="text-sm text-muted-foreground">Your conversations</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <UserGuide />
           <JoinRoomForm />
           <CreateRoomDialog />

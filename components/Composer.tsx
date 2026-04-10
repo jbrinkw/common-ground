@@ -108,21 +108,21 @@ export function Composer({ roomId }: { roomId: string }) {
   }
 
   return (
-    <div className="border-t">
+    <div className="border-t shrink-0 bg-background">
       {errorMessage && (
         <div className="px-4 pt-3">
           <p className="text-sm text-destructive">{errorMessage}</p>
         </div>
       )}
-      <form onSubmit={handleNormalSubmit} className="p-4 flex gap-2">
+      <form onSubmit={handleNormalSubmit} className="p-3 sm:p-4 flex gap-2">
         <Input
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Type your message..."
           disabled={isModerating}
-          className="flex-1"
+          className="flex-1 min-h-[44px]"
         />
-        <Button type="submit" disabled={isModerating || !input.trim()}>
+        <Button type="submit" disabled={isModerating || !input.trim()} className="min-h-[44px] min-w-[44px]">
           {isModerating ? "Moderating..." : "Send"}
         </Button>
       </form>

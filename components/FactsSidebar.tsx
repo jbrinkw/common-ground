@@ -42,10 +42,10 @@ export function FactsSidebar({
   }, [roomId]);
 
   return (
-    <div className="border-l bg-card flex flex-col h-full">
+    <div className="border-l bg-card flex flex-col h-full overflow-hidden">
       <button
         onClick={() => setCollapsed(!collapsed)}
-        className="p-4 text-left font-semibold text-sm flex items-center justify-between hover:bg-accent transition-colors"
+        className="p-4 text-left font-semibold text-sm flex items-center justify-between hover:bg-accent transition-colors min-h-[44px] shrink-0"
       >
         <span>Established Facts ({facts.length})</span>
         <span className="text-muted-foreground">
@@ -63,7 +63,7 @@ export function FactsSidebar({
           ) : (
             <ol className="space-y-2 list-decimal list-inside">
               {facts.map((fact) => (
-                <li key={fact.id} className="text-sm">
+                <li key={fact.id} className="text-sm break-words">
                   {fact.content}
                 </li>
               ))}

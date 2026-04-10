@@ -102,7 +102,7 @@ export default function RoomPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-dvh flex items-center justify-center">
         <p className="text-muted-foreground">Loading room...</p>
       </div>
     );
@@ -110,7 +110,7 @@ export default function RoomPage() {
 
   if (error || !userId) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-dvh flex items-center justify-center">
         <div className="text-center">
           <p className="text-destructive mb-2">Error</p>
           <p className="text-sm text-muted-foreground">{error ?? "Not authenticated"}</p>
@@ -120,24 +120,24 @@ export default function RoomPage() {
   }
 
   return (
-    <div className="h-screen flex">
+    <div className="h-dvh flex overflow-hidden">
       {/* Main chat area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
-        <div className="border-b p-4 flex items-center justify-between">
+        <div className="border-b p-3 sm:p-4 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
-            <Link href="/" className="text-muted-foreground hover:text-foreground transition-colors">
+            <Link href="/" className="min-h-[44px] min-w-[44px] flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
             </Link>
             <div>
-              <h1 className="font-semibold">CommonGround</h1>
-              <p className="text-xs text-muted-foreground">
+              <h1 className="font-semibold text-sm sm:text-base">CommonGround</h1>
+              <p className="text-xs text-muted-foreground truncate max-w-[200px] sm:max-w-none">
                 Talking with {otherUserName}
               </p>
             </div>
           </div>
           <button
-            className="md:hidden text-sm text-muted-foreground"
+            className="md:hidden min-h-[44px] min-w-[44px] flex items-center justify-center text-sm text-muted-foreground"
             onClick={() => setShowFacts(!showFacts)}
           >
             Facts ({facts.length})
@@ -178,8 +178,17 @@ export default function RoomPage() {
         <Composer roomId={roomId} />
       </div>
 
-      {/* Facts sidebar — desktop always, mobile toggle */}
-      <div className={`w-72 flex-col ${showFacts ? "flex" : "hidden md:flex"}`}>
+      {/* Facts sidebar — desktop inline, mobile overlay */}
+      {showFacts && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={() => setShowFacts(false)}
+        />
+      )}
+      <div className={`
+        ${showFacts ? "fixed inset-y-0 right-0 z-50 w-72 shadow-xl" : "hidden"}
+        md:relative md:block md:w-72 md:shadow-none md:z-auto
+      `}>
         <FactsSidebar roomId={roomId} initialFacts={facts} />
       </div>
     </div>

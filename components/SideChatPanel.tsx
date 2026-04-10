@@ -88,7 +88,7 @@ export function SideChatPanel({
   const atMaxRejections = rejectionCount >= MAX_REJECTIONS;
 
   return (
-    <div className="border-t bg-card flex flex-col">
+    <div className="border-t bg-card flex flex-col shrink-0">
       <div className="p-3 border-b flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="font-semibold text-sm">Revise Your Message</span>
@@ -133,7 +133,7 @@ export function SideChatPanel({
                     : "bg-primary text-primary-foreground"
                 }`}
               >
-                <p className="whitespace-pre-wrap">{msg.content}</p>
+                <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{msg.content}</p>
               </div>
             </div>
           ))}
@@ -158,10 +158,11 @@ export function SideChatPanel({
             onChange={(e) => setInput(e.target.value)}
             placeholder="Type your revised message..."
             disabled={isSubmitting}
-            className="flex-1"
+            className="flex-1 min-h-[44px]"
           />
-          <Button type="submit" disabled={isSubmitting || !input.trim()}>
-            Submit Revision
+          <Button type="submit" disabled={isSubmitting || !input.trim()} className="min-h-[44px]">
+            <span className="hidden sm:inline">Submit Revision</span>
+            <span className="sm:hidden">Submit</span>
           </Button>
         </form>
       )}

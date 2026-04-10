@@ -66,13 +66,13 @@ export function MainThread({
                 {isOwnMessage ? "You" : "Them"}
               </span>
               <div
-                className={`rounded-lg px-4 py-2 max-w-[80%] ${
+                className={`rounded-lg px-4 py-2 max-w-[85%] sm:max-w-[80%] ${
                   isOwnMessage
                     ? "bg-primary text-primary-foreground"
                     : "bg-secondary text-secondary-foreground"
                 }`}
               >
-                <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                <p className="text-sm whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{msg.content}</p>
               </div>
               <div className="flex items-center gap-2 mt-1">
                 {msg.revision_count > 0 && (
