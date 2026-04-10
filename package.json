@@ -13,6 +13,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.87.0",
     "@radix-ui/react-slot": "^1.2.4",
+    "@serwist/next": "^9.5.7",
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.103.0",
     "class-variance-authority": "^0.7.1",
@@ -21,6 +22,7 @@
     "next": "15.5.15",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "serwist": "^9.5.7",
     "tailwind-merge": "^3.5.0",
     "uuid": "^13.0.0"
   },

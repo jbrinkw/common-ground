@@ -4,7 +4,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import type { ModeratorVerdict } from "./types";
 import { DEFAULT_RUBRIC_SYSTEM_PROMPT } from "./rubrics/default_v1";
 
-const MODEL = "claude-sonnet-4-6-20250514";
+const MODEL = "claude-haiku-4-5-20251001";
 
 /**
  * Mock moderator for local dev when ANTHROPIC_API_KEY is not set.

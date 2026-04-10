@@ -1,0 +1,25 @@
+[api]
+enabled = true
+port = 64321
+
+[db]
+port = 64322
+
+[studio]
+enabled = true
+port = 64323
+
+[inbucket]
+enabled = true
+port = 64324
+
+[auth]
+enabled = true
+site_url = "http://localhost:3001"
+
+[storage]
+enabled = true
+
+[analytics]
+enabled = true
+port = 64327
