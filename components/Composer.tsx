@@ -93,18 +93,18 @@ export function Composer({ roomId }: { roomId: string }) {
           <p className="text-sm text-destructive">{errorMessage}</p>
         </div>
       )}
-    <form onSubmit={handleNormalSubmit} className="p-4 flex gap-2">
-      <Input
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        placeholder="Type your message..."
-        disabled={isModerating}
-        className="flex-1"
-      />
-      <Button type="submit" disabled={isModerating || !input.trim()}>
-        {isModerating ? "Moderating..." : "Send"}
-      </Button>
-    </form>
+      <form onSubmit={handleNormalSubmit} className="p-4 flex gap-2">
+        <Input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Type your message..."
+          disabled={isModerating}
+          className="flex-1"
+        />
+        <Button type="submit" disabled={isModerating || !input.trim()}>
+          {isModerating ? "Moderating..." : "Send"}
+        </Button>
+      </form>
     </div>
   );
 }
