@@ -9,6 +9,7 @@ import { MainThread } from "@/components/MainThread";
 import { FactsSidebar } from "@/components/FactsSidebar";
 import { Composer } from "@/components/Composer";
 import { TypingIndicator } from "@/components/TypingIndicator";
+import { ConversationSummary } from "@/components/ConversationSummary";
 import { markRoomVisited, archiveRoom } from "./actions";
 
 export default function RoomPage() {
@@ -145,6 +146,7 @@ export default function RoomPage() {
             </div>
           </div>
           <div className="flex items-center gap-1">
+            <ConversationSummary roomId={roomId} />
             <button
               className="text-xs text-muted-foreground hover:text-foreground min-h-[44px] px-2 transition-colors"
               onClick={async () => {
