@@ -282,7 +282,7 @@ export async function abandonDraft(roomId: string): Promise<{ success: boolean }
   }
 }
 
-export async function createRoom(): Promise<
+export async function createRoom(topic?: string): Promise<
   { roomId: string; inviteCode: string; inviteToken: string } | { error: string }
 > {
   try {
@@ -294,6 +294,7 @@ export async function createRoom(): Promise<
       .insert({
         user_a_id: user.id,
         invite_code: inviteCode,
+        ...(topic ? { topic } : {}),
       })
       .select("id, invite_code, invite_token")
       .single();

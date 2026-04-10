@@ -14,6 +14,7 @@ export type Room = {
   status: "active" | "paused" | "closed";
   invite_code: string;
   invite_token: string;
+  topic: string | null;
 };
 
 export type MainMessage = {
