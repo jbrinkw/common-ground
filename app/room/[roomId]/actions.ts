@@ -216,6 +216,61 @@ export async function submitDraft(
   }
 }
 
+export async function forceSendDraft(
+  roomId: string,
+  content: string,
+  moderatorExplanation: string
+): Promise<{ status: "approved"; messageId: string } | { status: "error"; message: string }> {
+  try {
+    const { supabase, user } = await getAuthUser();
+    const userId = user.id;
+
+    // Verify participant
+    const { data: room } = await supabase
+      .from("rooms")
+      .select("id")
+      .eq("id", roomId)
+      .or(`user_a_id.eq.${userId},user_b_id.eq.${userId}`)
+      .single();
+
+    if (!room) throw new Error("Not a participant of this room");
+
+    // Insert with moderator note prepended
+    const messageWithNote = `${content}\n\n> **Moderator note:** ${moderatorExplanation}`;
+
+    const { data: newMessage, error: insertError } = await supabase
+      .from("main_messages")
+      .insert({
+        room_id: roomId,
+        sender_id: userId,
+        content: messageWithNote,
+        revision_count: -1, // negative signals force-sent
+      })
+      .select("id")
+      .single();
+
+    if (insertError || !newMessage) {
+      throw insertError ?? new Error("Failed to insert message");
+    }
+
+    // Clean up pending draft
+    await supabase
+      .from("pending_drafts")
+      .delete()
+      .eq("room_id", roomId)
+      .eq("user_id", userId);
+
+    // Push notification
+    notifyRoomParticipant(roomId, userId, content).catch(() => {});
+
+    return { status: "approved", messageId: newMessage.id };
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Failed to force send";
+    return { status: "error", message };
+  }
+}
+
 export async function abandonDraft(roomId: string): Promise<{ success: boolean }> {
   try {
     const { supabase, user } = await getAuthUser();

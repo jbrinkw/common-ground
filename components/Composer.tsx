@@ -7,6 +7,7 @@ import { SideChatPanel } from "@/components/SideChatPanel";
 import {
   submitDraft,
   abandonDraft,
+  forceSendDraft,
   type SubmitDraftResult,
 } from "@/app/room/[roomId]/actions";
 import type { SideChatMessage } from "@/lib/types";
@@ -18,6 +19,8 @@ type ComposerMode =
       draftSessionId: string;
       rejectionCount: number;
       suggestedRevision?: string;
+      lastExplanation: string;
+      lastDraftContent: string;
       messages: SideChatMessage[];
     };
 
@@ -50,6 +53,8 @@ export function Composer({ roomId }: { roomId: string }) {
         draftSessionId: result.draftSessionId,
         rejectionCount: result.rejectionCount,
         suggestedRevision: result.suggestedRevision,
+        lastExplanation: result.explanation,
+        lastDraftContent: content.trim(),
         messages: [],
       });
     } else {
@@ -77,10 +82,26 @@ export function Composer({ roomId }: { roomId: string }) {
         draftSessionId={mode.draftSessionId}
         rejectionCount={mode.rejectionCount}
         suggestedRevision={mode.suggestedRevision}
+        lastExplanation={mode.lastExplanation}
+        lastDraftContent={mode.lastDraftContent}
         initialMessages={mode.messages}
         onSubmitRevision={(content) =>
           handleSubmit(content, mode.draftSessionId)
         }
+        onForceSend={async () => {
+          const result = await forceSendDraft(
+            roomId,
+            mode.lastDraftContent,
+            mode.lastExplanation
+          );
+          if (result.status === "approved") {
+            setMode({ type: "normal" });
+            setInput("");
+          } else {
+            setErrorMessage(result.message);
+            setMode({ type: "normal" });
+          }
+        }}
         onAbandon={handleAbandon}
       />
     );

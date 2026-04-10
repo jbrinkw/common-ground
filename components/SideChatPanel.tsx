@@ -15,16 +15,22 @@ export function SideChatPanel({
   draftSessionId,
   rejectionCount,
   suggestedRevision,
+  lastExplanation,
+  lastDraftContent,
   initialMessages,
   onSubmitRevision,
+  onForceSend,
   onAbandon,
 }: {
   roomId: string;
   draftSessionId: string;
   rejectionCount: number;
   suggestedRevision?: string;
+  lastExplanation: string;
+  lastDraftContent: string;
   initialMessages: SideChatMessage[];
   onSubmitRevision: (content: string) => Promise<void>;
+  onForceSend: () => Promise<void>;
   onAbandon: () => void;
 }) {
   const [messages, setMessages] = useState<SideChatMessage[]>(initialMessages);
@@ -90,9 +96,24 @@ export function SideChatPanel({
             Attempt {rejectionCount}/{MAX_REJECTIONS}
           </Badge>
         </div>
-        <Button variant="ghost" size="sm" onClick={onAbandon}>
-          Abandon
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={async () => {
+              setIsSubmitting(true);
+              await onForceSend();
+              setIsSubmitting(false);
+            }}
+            disabled={isSubmitting}
+            className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+          >
+            Force Send
+          </Button>
+          <Button variant="ghost" size="sm" onClick={onAbandon}>
+            Abandon
+          </Button>
+        </div>
       </div>
 
       <ScrollArea className="flex-1 max-h-60 p-4">
