@@ -84,6 +84,13 @@ export default function RoomPage() {
     loadData();
   }, [loadData]);
 
+  // Register push notifications on first visit
+  useEffect(() => {
+    import("@/lib/push-client").then(({ registerPushSubscription }) => {
+      registerPushSubscription().catch(console.error);
+    });
+  }, []);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
