@@ -5,6 +5,7 @@ import { RoomCard } from "@/components/RoomCard";
 import { CreateRoomDialog } from "@/components/CreateRoomDialog";
 import { JoinRoomForm } from "@/components/JoinRoomForm";
 import { UserGuide } from "@/components/UserGuide";
+import { SignOutButton } from "@/components/SignOutButton";
 import type { RoomWithDetails } from "@/lib/types";
 
 export default async function DashboardPage() {
@@ -31,6 +32,7 @@ export default async function DashboardPage() {
           <UserGuide />
           <JoinRoomForm />
           <CreateRoomDialog />
+          <SignOutButton />
         </div>
       </div>
 
