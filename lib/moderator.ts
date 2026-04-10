@@ -127,12 +127,13 @@ export async function moderateMessage(args: {
     };
   } catch (error) {
     console.error("Moderator error:", error);
-    // Fail-open: approve the message if the API call or parsing fails.
-    // This prevents blocking conversation due to transient API issues.
+    // Fail-closed: reject the message if the API call or parsing fails.
+    // This prevents unmoderated messages from reaching the conversation.
     return {
-      verdict: "approve",
+      verdict: "revise",
       violated_rules: [],
-      explanation: "Moderator unavailable — message auto-approved.",
+      explanation:
+        "The moderator is temporarily unavailable. Please try again in a moment.",
       proposed_fact_updates: [],
     };
   }
