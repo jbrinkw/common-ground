@@ -7,86 +7,98 @@ AI-moderated disagreement platform where two users discuss a topic with every me
 ```bash
 npm install
 npm run dev          # Starts Next.js with Turbopack on localhost:3000
-npm run test         # Vitest single run (48 tests)
+npm run test         # Vitest single run
 npm run test:watch   # Vitest watch mode
 npm run build        # Production build (Turbopack)
 npm run lint         # ESLint
 ```
 
-### Local Dev (No API Keys)
+### Setup
 
-The app works without Supabase or Anthropic keys using mock mode:
-- In-memory store replaces Supabase (`lib/mock-store.ts`)
-- Mock moderator replaces Claude (rejects "bad"/"reject" keywords and >500 chars; extracts facts from "fact: ..." prefix)
-
-### Full Setup
-
-1. `supabase start` — starts local Supabase (gives you URL + keys)
+1. `supabase start` -- starts local Supabase (gives you URL + keys)
 2. Copy `.env.local.example` to `.env.local` and fill in values
-3. Run migration: `supabase db reset` or apply `supabase/migrations/0001_init.sql`
+3. Run migration: `supabase db reset` or apply migrations in `supabase/migrations/`
+4. Generate VAPID keys: `npx web-push generate-vapid-keys` and add to `.env.local`
+
+### Authentication
+
+The app uses Supabase Auth (email/password + Google OAuth). On first visit, unauthenticated users are redirected to `/login` by Next.js middleware. After signup, a `profiles` row is auto-created via a database trigger.
 
 ## Tech Stack
 
 - **Next.js 15** App Router, React 19, TypeScript, Turbopack
 - **Tailwind CSS v4** with CSS custom properties (HSL), PostCSS plugin
-- **shadcn/ui** (New York style, neutral base) — components in `components/ui/`
-- **Supabase** PostgreSQL + Realtime subscriptions via `@supabase/ssr`
-- **Anthropic SDK** (`@anthropic-ai/sdk`) — Claude claude-sonnet-4-6-20250514 for moderation
+- **shadcn/ui** (New York style, neutral base) -- components in `components/ui/`
+- **Supabase** PostgreSQL + Realtime subscriptions + Auth via `@supabase/ssr`
+- **Anthropic SDK** (`@anthropic-ai/sdk`) -- Claude claude-sonnet-4-6-20250514 for moderation
+- **Serwist** PWA service worker with push notification support
+- **web-push** for server-side Web Push API notifications
 - **Vitest 4** for unit tests
 
 ## Architecture
 
 ### Routes
 
-- `/` — Home page, create a new room
-- `/room/[roomId]?user=A|B` — Discussion room (client component)
-- `/api/health` — Health check (`{ status: "ok", timestamp }`)
+- `/login` -- Login / signup page (email + Google OAuth)
+- `/dashboard` -- Room list, create room, join by code
+- `/room/[roomId]` -- Discussion room (client component, auth required)
+- `/join/[token]` -- Invite link handler (redirects to room after joining)
+- `/auth/callback` -- Supabase OAuth callback
+- `/auth/confirm` -- Email confirmation handler
+- `/api/health` -- Health check (`{ status: "ok", timestamp }`)
 
 ### Core Flow
 
-1. User submits draft via `Composer` → `submitDraft()` server action
-2. `moderateMessage()` calls Claude (or mock) with rubric, recent messages, and established facts
-3. Approved → message inserted into `main_messages`, visible to both users via Realtime
-4. Rejected → side-chat opens with AI explanation, user revises (max 5 attempts)
-5. Facts extracted from approved messages appear in `FactsSidebar`
+1. User signs up/logs in via Supabase Auth
+2. User creates a room from dashboard, gets invite link/code
+3. Other user joins via invite link or code
+4. User submits draft via `Composer` -> `submitDraft()` server action
+5. `moderateMessage()` calls Claude with rubric, recent messages, and established facts
+6. Approved -> message inserted into `main_messages`, push notification sent to other user
+7. Rejected -> side-chat opens with AI explanation, user revises (max 5 attempts)
+8. Facts extracted from approved messages appear in `FactsSidebar`
 
 ### Key Files
 
 | Path | Purpose |
 |------|---------|
-| `app/room/[roomId]/actions.ts` | Server actions: createRoom, submitDraft, abandonDraft, getRoomData |
-| `lib/moderator.ts` | AI moderation (Claude API or mock fallback) |
-| `lib/mock-store.ts` | In-memory store for local dev without Supabase |
+| `middleware.ts` | Session refresh + route protection |
+| `app/room/[roomId]/actions.ts` | Server actions: createRoom, submitDraft, abandonDraft, etc. |
+| `app/room/[roomId]/push-actions.ts` | Push notification server actions |
+| `lib/moderator.ts` | AI moderation (Claude API) |
+| `lib/push.ts` | Web Push API server utility |
+| `lib/push-client.ts` | Client-side push subscription registration |
 | `lib/types.ts` | TypeScript types: Room, MainMessage, EstablishedFact, etc. |
 | `lib/rubrics/default_v1.ts` | Moderation system prompt (5 revision rules) |
 | `lib/supabase/client.ts` | Browser Supabase client |
 | `lib/supabase/server.ts` | Server Supabase client with cookie management |
+| `app/sw.ts` | Serwist service worker with push handlers |
 
 ### Database Tables (Supabase)
 
-`rooms`, `main_messages`, `established_facts`, `side_chat_messages`, `pending_drafts`, `moderation_decisions`
+`rooms`, `main_messages`, `established_facts`, `side_chat_messages`, `pending_drafts`, `moderation_decisions`, `profiles`, `push_subscriptions`
 
 Realtime enabled on: `main_messages`, `established_facts`, `side_chat_messages`
 
-Schema in `supabase/migrations/0001_init.sql`.
+Schema in `supabase/migrations/`.
 
 ### Components
 
-- `Composer` — Message input, switches between normal and side-chat (revision) mode
-- `MainThread` — Approved messages with Realtime subscription, auto-scroll
-- `FactsSidebar` — Established facts panel with Realtime subscription
-- `SideChatPanel` — AI feedback during draft revision (max 5 attempts)
+- `Composer` -- Message input, switches between normal and side-chat (revision) mode
+- `MainThread` -- Approved messages with Realtime subscription, auto-scroll
+- `FactsSidebar` -- Established facts panel with Realtime subscription
+- `SideChatPanel` -- AI feedback during draft revision (max 5 attempts)
 
 ## Environment Variables
 
 ```
-NEXT_PUBLIC_SUPABASE_URL      # Supabase project URL
-NEXT_PUBLIC_SUPABASE_ANON_KEY # Supabase anon key
-SUPABASE_SERVICE_ROLE_KEY     # Supabase service role key (server only)
-ANTHROPIC_API_KEY             # Claude API key for moderation
+NEXT_PUBLIC_SUPABASE_URL        # Supabase project URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY   # Supabase anon key
+SUPABASE_SERVICE_ROLE_KEY       # Supabase service role key (server only)
+ANTHROPIC_API_KEY               # Claude API key for moderation
+NEXT_PUBLIC_VAPID_PUBLIC_KEY    # VAPID public key for push notifications
+VAPID_PRIVATE_KEY               # VAPID private key for push notifications (server only)
 ```
-
-All optional for local dev (mock mode activates automatically).
 
 ## Conventions
 
