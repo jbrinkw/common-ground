@@ -376,6 +376,14 @@ export async function joinRoomByToken(
   }
 }
 
+export async function markRoomVisited(roomId: string) {
+  const { supabase, user } = await getAuthUser();
+  await supabase.from("room_visits").upsert(
+    { user_id: user.id, room_id: roomId, last_seen: new Date().toISOString() },
+    { onConflict: "user_id,room_id" }
+  );
+}
+
 export async function getDashboardRooms() {
   const { supabase, user } = await getAuthUser();
 
@@ -406,16 +414,64 @@ export async function getDashboardRooms() {
     }
   }
 
+  // Fetch room visits for the current user
+  const { data: visits } = await supabase
+    .from("room_visits")
+    .select("room_id, last_seen")
+    .eq("user_id", user.id)
+    .in("room_id", roomIds);
+
+  const visitByRoom = new Map<string, string>();
+  for (const v of visits ?? []) {
+    visitByRoom.set(v.room_id, v.last_seen);
+  }
+
   return (rooms ?? []).map((room) => {
     const isUserA = room.user_a_id === user.id;
     const otherProfile = isUserA ? room.user_b_profile : room.user_a_profile;
     const latest = latestByRoom.get(room.id);
+    const lastVisit = visitByRoom.get(room.id);
+    const hasUnread = latest?.created_at
+      ? !lastVisit || new Date(latest.created_at) > new Date(lastVisit)
+      : false;
 
     return {
       ...room,
       other_user_display_name: otherProfile?.display_name ?? null,
       last_message_content: latest?.content ?? null,
       last_message_at: latest?.created_at ?? null,
+      has_unread: hasUnread,
     };
   });
+}
+
+export async function archiveRoom(roomId: string): Promise<{ success: boolean }> {
+  try {
+    const { supabase, user } = await getAuthUser();
+    const { error } = await supabase
+      .from("rooms")
+      .update({ status: "closed" })
+      .eq("id", roomId)
+      .or(`user_a_id.eq.${user.id},user_b_id.eq.${user.id}`);
+    if (error) throw error;
+    return { success: true };
+  } catch {
+    return { success: false };
+  }
+}
+
+export async function deleteRoom(roomId: string): Promise<{ success: boolean }> {
+  try {
+    const { supabase, user } = await getAuthUser();
+    // Only room creator can delete
+    const { error } = await supabase
+      .from("rooms")
+      .delete()
+      .eq("id", roomId)
+      .eq("user_a_id", user.id);
+    if (error) throw error;
+    return { success: true };
+  } catch {
+    return { success: false };
+  }
 }

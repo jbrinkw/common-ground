@@ -8,6 +8,7 @@ import Link from "next/link";
 import { MainThread } from "@/components/MainThread";
 import { FactsSidebar } from "@/components/FactsSidebar";
 import { Composer } from "@/components/Composer";
+import { markRoomVisited, archiveRoom } from "./actions";
 
 export default function RoomPage() {
   const params = useParams();
@@ -82,6 +83,9 @@ export default function RoomPage() {
 
       setMessages(messagesResult.data ?? []);
       setFacts(factsResult.data ?? []);
+
+      // Mark room as visited (fire and forget)
+      markRoomVisited(roomId).catch(() => {});
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to load room data";
@@ -139,12 +143,25 @@ export default function RoomPage() {
               </p>
             </div>
           </div>
-          <button
-            className="md:hidden min-h-[44px] min-w-[44px] flex items-center justify-center text-sm text-muted-foreground"
-            onClick={() => setShowFacts(!showFacts)}
-          >
-            Facts ({facts.length})
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              className="text-xs text-muted-foreground hover:text-foreground min-h-[44px] px-2 transition-colors"
+              onClick={async () => {
+                if (confirm("Archive this conversation?")) {
+                  await archiveRoom(roomId);
+                  window.location.href = "/";
+                }
+              }}
+            >
+              Archive
+            </button>
+            <button
+              className="md:hidden min-h-[44px] min-w-[44px] flex items-center justify-center text-sm text-muted-foreground"
+              onClick={() => setShowFacts(!showFacts)}
+            >
+              Facts ({facts.length})
+            </button>
+          </div>
         </div>
 
         {/* Waiting for partner banner */}

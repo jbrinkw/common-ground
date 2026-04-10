@@ -89,4 +89,5 @@ export type RoomWithDetails = Room & {
   other_user_display_name: string | null;
   last_message_content: string | null;
   last_message_at: string | null;
+  has_unread: boolean;
 };

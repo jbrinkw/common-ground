@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { RoomWithDetails } from "@/lib/types";
+import { deleteRoom } from "@/app/room/[roomId]/actions";
 
 export function RoomCard({ room }: { room: RoomWithDetails }) {
   const router = useRouter();
@@ -23,17 +24,38 @@ export function RoomCard({ room }: { room: RoomWithDetails }) {
       onClick={() => router.push(`/room/${room.id}`)}
     >
       <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-base">
-            {room.other_user_display_name ?? "Waiting for someone to join..."}
-          </CardTitle>
-          {room.topic && (
-            <p className="text-xs text-muted-foreground mt-0.5">{room.topic}</p>
-          )}
-          <Badge variant={room.status === "active" ? "default" : "secondary"}>
-            {room.status}
-          </Badge>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            {room.has_unread && (
+              <div className="w-2.5 h-2.5 rounded-full bg-[#2d8282] flex-shrink-0" />
+            )}
+            <CardTitle className="text-base truncate">
+              {room.other_user_display_name ?? "Waiting for someone to join..."}
+            </CardTitle>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <Badge variant={room.status === "active" ? "default" : "secondary"}>
+              {room.status}
+            </Badge>
+            {!room.user_b_id && (
+              <button
+                className="text-xs text-muted-foreground hover:text-destructive transition-colors"
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  if (confirm("Delete this room?")) {
+                    await deleteRoom(room.id);
+                    router.refresh();
+                  }
+                }}
+              >
+                Delete
+              </button>
+            )}
+          </div>
         </div>
+        {room.topic && (
+          <p className="text-xs text-muted-foreground mt-0.5">{room.topic}</p>
+        )}
       </CardHeader>
       <CardContent>
         {room.last_message_content ? (
