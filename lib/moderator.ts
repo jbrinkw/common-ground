@@ -3,6 +3,23 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { ModeratorVerdict } from "./types";
 import { DEFAULT_RUBRIC_SYSTEM_PROMPT } from "./rubrics/default_v1";
+import { GENTLE_RUBRIC_SYSTEM_PROMPT } from "./rubrics/gentle_v1";
+import { STRICT_RUBRIC_SYSTEM_PROMPT } from "./rubrics/strict_v1";
+import { MINIMAL_RUBRIC_SYSTEM_PROMPT } from "./rubrics/minimal_v1";
+
+export async function getRubricPrompt(rubricId: string): Promise<string> {
+  switch (rubricId) {
+    case "strict_v1":
+      return STRICT_RUBRIC_SYSTEM_PROMPT;
+    case "minimal_v1":
+      return MINIMAL_RUBRIC_SYSTEM_PROMPT;
+    case "gentle_v1":
+      return GENTLE_RUBRIC_SYSTEM_PROMPT;
+    case "default_v1":
+    default:
+      return DEFAULT_RUBRIC_SYSTEM_PROMPT;
+  }
+}
 
 const MODEL = "claude-haiku-4-5-20251001";
 
@@ -111,7 +128,7 @@ export async function moderateMessage(args: {
     const response = await client.messages.create({
       model: MODEL,
       max_tokens: 1024,
-      system: DEFAULT_RUBRIC_SYSTEM_PROMPT,
+      system: await getRubricPrompt(args.rubricId),
       messages: [{ role: "user", content: userContent }],
     });
 
