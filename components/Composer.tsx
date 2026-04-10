@@ -21,13 +21,7 @@ type ComposerMode =
       messages: SideChatMessage[];
     };
 
-export function Composer({
-  roomId,
-  userId,
-}: {
-  roomId: string;
-  userId: string;
-}) {
+export function Composer({ roomId }: { roomId: string }) {
   const [input, setInput] = useState("");
   const [mode, setMode] = useState<ComposerMode>({ type: "normal" });
   const [isModerating, setIsModerating] = useState(false);
@@ -39,7 +33,6 @@ export function Composer({
 
     const result: SubmitDraftResult = await submitDraft(
       roomId,
-      userId,
       content.trim(),
       existingSessionId
     );
@@ -55,17 +48,16 @@ export function Composer({
         draftSessionId: result.draftSessionId,
         rejectionCount: result.rejectionCount,
         suggestedRevision: result.suggestedRevision,
-        messages: [], // Messages arrive via Realtime subscription
+        messages: [],
       });
     } else {
-      // Error
       console.error("Submit draft error:", result.message);
       setMode({ type: "normal" });
     }
   };
 
   const handleAbandon = async () => {
-    await abandonDraft(roomId, userId);
+    await abandonDraft(roomId);
     setMode({ type: "normal" });
     setInput("");
   };
@@ -79,7 +71,6 @@ export function Composer({
     return (
       <SideChatPanel
         roomId={roomId}
-        userId={userId}
         draftSessionId={mode.draftSessionId}
         rejectionCount={mode.rejectionCount}
         suggestedRevision={mode.suggestedRevision}

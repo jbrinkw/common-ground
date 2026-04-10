@@ -18,21 +18,7 @@ export function MainThread({
   const [messages, setMessages] = useState<MainMessage[]>(initialMessages);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // Sync from parent when initialMessages changes (mock polling mode)
   useEffect(() => {
-    setMessages(initialMessages);
-  }, [initialMessages]);
-
-  useEffect(() => {
-    // Skip Realtime subscription when Supabase isn't configured (mock mode
-    // uses polling from the parent page instead).
-    if (
-      !process.env.NEXT_PUBLIC_SUPABASE_URL ||
-      !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    ) {
-      return;
-    }
-
     const supabase = createClient();
 
     const channel = supabase
@@ -77,7 +63,7 @@ export function MainThread({
               className={`flex flex-col ${isOwnMessage ? "items-end" : "items-start"}`}
             >
               <span className="text-xs text-muted-foreground mb-1">
-                User {msg.sender_id}
+                {isOwnMessage ? "You" : "Them"}
               </span>
               <div
                 className={`rounded-lg px-4 py-2 max-w-[80%] ${

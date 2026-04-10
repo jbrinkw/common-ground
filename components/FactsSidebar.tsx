@@ -16,19 +16,7 @@ export function FactsSidebar({
   const [facts, setFacts] = useState<EstablishedFact[]>(initialFacts);
   const [collapsed, setCollapsed] = useState(false);
 
-  // Sync from parent when initialFacts changes (mock polling mode)
   useEffect(() => {
-    setFacts(initialFacts);
-  }, [initialFacts]);
-
-  useEffect(() => {
-    if (
-      !process.env.NEXT_PUBLIC_SUPABASE_URL ||
-      !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    ) {
-      return;
-    }
-
     const supabase = createClient();
 
     const channel = supabase

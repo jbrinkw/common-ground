@@ -12,7 +12,6 @@ const MAX_REJECTIONS = 5;
 
 export function SideChatPanel({
   roomId,
-  userId,
   draftSessionId,
   rejectionCount,
   suggestedRevision,
@@ -21,7 +20,6 @@ export function SideChatPanel({
   onAbandon,
 }: {
   roomId: string;
-  userId: string;
   draftSessionId: string;
   rejectionCount: number;
   suggestedRevision?: string;
@@ -35,33 +33,21 @@ export function SideChatPanel({
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (
-      !process.env.NEXT_PUBLIC_SUPABASE_URL ||
-      !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    ) {
-      return;
-    }
-
     const supabase = createClient();
 
     const channel = supabase
-      .channel(`side_chat:${roomId}:${userId}:${draftSessionId}`)
+      .channel(`side_chat:${roomId}:${draftSessionId}`)
       .on(
         "postgres_changes",
         {
           event: "INSERT",
           schema: "public",
           table: "side_chat_messages",
-          // Supabase Realtime only supports single-column filters, so we
-          // filter by room_id server-side and narrow by user + session client-side.
           filter: `room_id=eq.${roomId}`,
         },
         (payload) => {
           const msg = payload.new as SideChatMessage;
-          if (
-            msg.user_id === userId &&
-            msg.draft_session_id === draftSessionId
-          ) {
+          if (msg.draft_session_id === draftSessionId) {
             setMessages((prev) => {
               if (prev.some((m) => m.id === msg.id)) return prev;
               return [...prev, msg];
@@ -74,7 +60,7 @@ export function SideChatPanel({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [roomId, userId, draftSessionId]);
+  }, [roomId, draftSessionId]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
