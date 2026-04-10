@@ -25,11 +25,13 @@ export function Composer({ roomId }: { roomId: string }) {
   const [input, setInput] = useState("");
   const [mode, setMode] = useState<ComposerMode>({ type: "normal" });
   const [isModerating, setIsModerating] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleSubmit = async (content: string, existingSessionId?: string) => {
     if (!content.trim()) return;
 
     setIsModerating(true);
+    setErrorMessage(null);
 
     const result: SubmitDraftResult = await submitDraft(
       roomId,
@@ -52,6 +54,7 @@ export function Composer({ roomId }: { roomId: string }) {
       });
     } else {
       console.error("Submit draft error:", result.message);
+      setErrorMessage(result.message);
       setMode({ type: "normal" });
     }
   };
@@ -84,7 +87,13 @@ export function Composer({ roomId }: { roomId: string }) {
   }
 
   return (
-    <form onSubmit={handleNormalSubmit} className="p-4 border-t flex gap-2">
+    <div className="border-t">
+      {errorMessage && (
+        <div className="px-4 pt-3">
+          <p className="text-sm text-destructive">{errorMessage}</p>
+        </div>
+      )}
+    <form onSubmit={handleNormalSubmit} className="p-4 flex gap-2">
       <Input
         value={input}
         onChange={(e) => setInput(e.target.value)}
@@ -96,5 +105,6 @@ export function Composer({ roomId }: { roomId: string }) {
         {isModerating ? "Moderating..." : "Send"}
       </Button>
     </form>
+    </div>
   );
 }
