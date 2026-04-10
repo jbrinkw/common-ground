@@ -3,6 +3,7 @@
 import { moderateMessage } from "@/lib/moderator";
 import { v4 as uuidv4 } from "uuid";
 import type { ModeratorVerdict } from "@/lib/types";
+import { notifyRoomParticipant } from "./push-actions";
 
 async function getSupabase() {
   const { createClient } = await import("@/lib/supabase/server");
@@ -156,6 +157,9 @@ export async function submitDraft(
         .delete()
         .eq("room_id", roomId)
         .eq("user_id", userId);
+
+      // Send push notification to the other participant (fire and forget)
+      notifyRoomParticipant(roomId, userId, content).catch(() => {});
 
       return { status: "approved", messageId: newMessage.id };
     } else {
