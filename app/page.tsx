@@ -28,7 +28,7 @@ export default async function DashboardPage() {
         </div>
         <div className="flex items-center gap-3">
           <JoinRoomForm />
-          <CreateRoomDialog onCreated={() => {}} />
+          <CreateRoomDialog />
         </div>
       </div>
 

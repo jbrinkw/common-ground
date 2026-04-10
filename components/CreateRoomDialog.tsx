@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -12,7 +13,8 @@ import {
 } from "@/components/ui/card";
 import { createRoom } from "@/app/room/[roomId]/actions";
 
-export function CreateRoomDialog({ onCreated }: { onCreated: () => void }) {
+export function CreateRoomDialog() {
+  const router = useRouter();
   const [isCreating, setIsCreating] = useState(false);
   const [result, setResult] = useState<{
     inviteCode: string;
@@ -36,7 +38,7 @@ export function CreateRoomDialog({ onCreated }: { onCreated: () => void }) {
       inviteLink: `${window.location.origin}/join/${res.inviteToken}`,
     });
     setIsCreating(false);
-    onCreated();
+    router.refresh();
   };
 
   const copyToClipboard = (text: string) => {
