@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SideChatPanel } from "@/components/SideChatPanel";
@@ -11,6 +11,7 @@ import {
   type SubmitDraftResult,
 } from "@/app/room/[roomId]/actions";
 import type { SideChatMessage } from "@/lib/types";
+import { useTypingBroadcast } from "@/components/TypingIndicator";
 
 type ComposerMode =
   | { type: "normal" }
@@ -24,14 +25,30 @@ type ComposerMode =
       messages: SideChatMessage[];
     };
 
-export function Composer({ roomId }: { roomId: string }) {
+export function Composer({ roomId, userId }: { roomId: string; userId?: string }) {
   const [input, setInput] = useState("");
   const [mode, setMode] = useState<ComposerMode>({ type: "normal" });
   const [isModerating, setIsModerating] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { setTyping } = useTypingBroadcast(roomId, userId ?? "");
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleInputChange = (value: string) => {
+    setInput(value);
+    if (userId) {
+      setTyping(true);
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = setTimeout(() => setTyping(false), 2000);
+    }
+  };
 
   const handleSubmit = async (content: string, existingSessionId?: string) => {
     if (!content.trim()) return;
+
+    if (userId) {
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      setTyping(false);
+    }
 
     setIsModerating(true);
     setErrorMessage(null);
@@ -116,7 +133,7 @@ export function Composer({ roomId }: { roomId: string }) {
       <form onSubmit={handleNormalSubmit} className="p-3 sm:p-4 flex gap-2">
         <Input
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          onChange={(e) => handleInputChange(e.target.value)}
           placeholder="Type your message..."
           disabled={isModerating}
           className="flex-1 min-h-[44px]"

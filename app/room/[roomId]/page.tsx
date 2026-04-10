@@ -8,6 +8,7 @@ import Link from "next/link";
 import { MainThread } from "@/components/MainThread";
 import { FactsSidebar } from "@/components/FactsSidebar";
 import { Composer } from "@/components/Composer";
+import { TypingIndicator } from "@/components/TypingIndicator";
 import { markRoomVisited, archiveRoom } from "./actions";
 
 export default function RoomPage() {
@@ -194,8 +195,11 @@ export default function RoomPage() {
           initialMessages={messages}
         />
 
+        {/* Typing indicator */}
+        <TypingIndicator roomId={roomId} currentUserId={userId} otherUserName={otherUserName} />
+
         {/* Composer */}
-        <Composer roomId={roomId} />
+        <Composer roomId={roomId} userId={userId} />
       </div>
 
       {/* Facts sidebar — desktop inline, mobile overlay */}
