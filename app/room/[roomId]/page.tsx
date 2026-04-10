@@ -15,11 +15,14 @@ export default function RoomPage() {
 
   const [userId, setUserId] = useState<string | null>(null);
   const [otherUserName, setOtherUserName] = useState<string>("...");
+  const [inviteCode, setInviteCode] = useState<string | null>(null);
+  const [inviteToken, setInviteToken] = useState<string | null>(null);
   const [messages, setMessages] = useState<MainMessage[]>([]);
   const [facts, setFacts] = useState<EstablishedFact[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showFacts, setShowFacts] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   const loadData = useCallback(async () => {
     try {
@@ -52,6 +55,11 @@ export default function RoomPage() {
       const isUserA = room.user_a_id === user.id;
       const otherProfile = isUserA ? room.user_b_profile : room.user_a_profile;
       setOtherUserName(otherProfile?.display_name ?? "Waiting for partner...");
+
+      if (!otherProfile?.display_name) {
+        setInviteCode(room.invite_code ?? null);
+        setInviteToken(room.invite_token ?? null);
+      }
 
       // Load messages and facts
       const [messagesResult, factsResult] = await Promise.all([
@@ -135,6 +143,29 @@ export default function RoomPage() {
             Facts ({facts.length})
           </button>
         </div>
+
+        {/* Waiting for partner banner */}
+        {otherUserName === "Waiting for partner..." && inviteCode && (
+          <div className="mx-4 mt-4 p-4 rounded-lg border bg-muted/50 text-center space-y-2">
+            <p className="text-sm font-medium">Share this room with your discussion partner</p>
+            <p className="text-xs text-muted-foreground">
+              Invite code: <span className="font-mono font-semibold text-foreground">{inviteCode}</span>
+            </p>
+            {inviteToken && (
+              <button
+                className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
+                onClick={async () => {
+                  const url = `${window.location.origin}/join/${inviteToken}`;
+                  await navigator.clipboard.writeText(url);
+                  setLinkCopied(true);
+                  setTimeout(() => setLinkCopied(false), 2000);
+                }}
+              >
+                {linkCopied ? "Link copied!" : "Copy invite link"}
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Messages */}
         <MainThread
