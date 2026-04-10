@@ -4,6 +4,7 @@ import { getDashboardRooms } from "@/app/room/[roomId]/actions";
 import { RoomCard } from "@/components/RoomCard";
 import { CreateRoomDialog } from "@/components/CreateRoomDialog";
 import { JoinRoomForm } from "@/components/JoinRoomForm";
+import { UserGuide } from "@/components/UserGuide";
 import type { RoomWithDetails } from "@/lib/types";
 
 export default async function DashboardPage() {
@@ -27,6 +28,7 @@ export default async function DashboardPage() {
           <p className="text-sm text-muted-foreground">Your conversations</p>
         </div>
         <div className="flex items-center gap-3">
+          <UserGuide />
           <JoinRoomForm />
           <CreateRoomDialog />
         </div>
