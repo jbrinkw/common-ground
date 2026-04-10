@@ -80,6 +80,11 @@ export function MainThread({
                     revised via moderator
                   </Badge>
                 )}
+                {msg.revision_count === -1 && (
+                  <Badge variant="outline" className="text-xs text-orange-600 border-orange-300">
+                    force sent
+                  </Badge>
+                )}
                 <span className="text-xs text-muted-foreground">
                   {new Date(msg.created_at).toLocaleTimeString()}
                 </span>

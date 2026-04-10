@@ -91,8 +91,7 @@ export function Composer({ roomId }: { roomId: string }) {
         onForceSend={async () => {
           const result = await forceSendDraft(
             roomId,
-            mode.lastDraftContent,
-            mode.lastExplanation
+            mode.lastDraftContent
           );
           if (result.status === "approved") {
             setMode({ type: "normal" });

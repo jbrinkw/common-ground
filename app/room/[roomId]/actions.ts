@@ -218,8 +218,7 @@ export async function submitDraft(
 
 export async function forceSendDraft(
   roomId: string,
-  content: string,
-  moderatorExplanation: string
+  content: string
 ): Promise<{ status: "approved"; messageId: string } | { status: "error"; message: string }> {
   try {
     const { supabase, user } = await getAuthUser();
@@ -235,15 +234,13 @@ export async function forceSendDraft(
 
     if (!room) throw new Error("Not a participant of this room");
 
-    // Insert with moderator note prepended
-    const messageWithNote = `${content}\n\n> **Moderator note:** ${moderatorExplanation}`;
-
+    // Insert the original message content (no moderator note visible to recipient)
     const { data: newMessage, error: insertError } = await supabase
       .from("main_messages")
       .insert({
         room_id: roomId,
         sender_id: userId,
-        content: messageWithNote,
+        content,
         revision_count: -1, // negative signals force-sent
       })
       .select("id")
