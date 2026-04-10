@@ -10,6 +10,14 @@ async function getSupabase() {
   return createClient();
 }
 
+async function getServiceSupabase() {
+  const { createClient } = await import("@supabase/supabase-js");
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
+
 async function getAuthUser() {
   const supabase = await getSupabase();
   const { data: { user }, error } = await supabase.auth.getUser();
@@ -255,9 +263,11 @@ export async function joinRoomByCode(
   code: string
 ): Promise<{ roomId: string } | { error: string }> {
   try {
-    const { supabase, user } = await getAuthUser();
+    const { user } = await getAuthUser();
+    // Use service role to bypass RLS — joiner isn't a participant yet
+    const admin = await getServiceSupabase();
 
-    const { data: room, error: findError } = await supabase
+    const { data: room, error: findError } = await admin
       .from("rooms")
       .select("id, user_a_id, user_b_id")
       .eq("invite_code", code.toUpperCase())
@@ -267,7 +277,7 @@ export async function joinRoomByCode(
     if (room.user_a_id === user.id) return { error: "You created this room" };
     if (room.user_b_id !== null) return { error: "Room is already full" };
 
-    const { error: updateError } = await supabase
+    const { error: updateError } = await admin
       .from("rooms")
       .update({ user_b_id: user.id })
       .eq("id", room.id);
@@ -285,9 +295,10 @@ export async function joinRoomByToken(
   token: string
 ): Promise<{ roomId: string } | { error: string }> {
   try {
-    const { supabase, user } = await getAuthUser();
+    const { user } = await getAuthUser();
+    const admin = await getServiceSupabase();
 
-    const { data: room, error: findError } = await supabase
+    const { data: room, error: findError } = await admin
       .from("rooms")
       .select("id, user_a_id, user_b_id")
       .eq("invite_token", token)
@@ -297,7 +308,7 @@ export async function joinRoomByToken(
     if (room.user_a_id === user.id) return { error: "You created this room" };
     if (room.user_b_id !== null) return { error: "Room is already full" };
 
-    const { error: updateError } = await supabase
+    const { error: updateError } = await admin
       .from("rooms")
       .update({ user_b_id: user.id })
       .eq("id", room.id);

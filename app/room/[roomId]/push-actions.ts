@@ -7,6 +7,14 @@ async function getSupabase() {
   return createClient();
 }
 
+async function getServiceSupabase() {
+  const { createClient } = await import("@supabase/supabase-js");
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
+
 export async function savePushSubscription(subscription: {
   endpoint: string;
   p256dh: string;
@@ -32,10 +40,11 @@ export async function notifyRoomParticipant(
   senderUserId: string,
   messagePreview: string
 ) {
-  const supabase = await getSupabase();
+  // Use service role to read other user's push subscriptions
+  const admin = await getServiceSupabase();
 
   // Find the other participant
-  const { data: room } = await supabase
+  const { data: room } = await admin
     .from("rooms")
     .select("user_a_id, user_b_id")
     .eq("id", roomId)
@@ -48,7 +57,7 @@ export async function notifyRoomParticipant(
   if (!recipientId) return;
 
   // Get sender's display name
-  const { data: senderProfile } = await supabase
+  const { data: senderProfile } = await admin
     .from("profiles")
     .select("display_name")
     .eq("id", senderUserId)
@@ -57,7 +66,7 @@ export async function notifyRoomParticipant(
   const senderName = senderProfile?.display_name ?? "Someone";
 
   // Get recipient's push subscriptions
-  const { data: subscriptions } = await supabase
+  const { data: subscriptions } = await admin
     .from("push_subscriptions")
     .select("id, endpoint, p256dh, auth")
     .eq("user_id", recipientId);
@@ -80,7 +89,7 @@ export async function notifyRoomParticipant(
     );
 
     if (result.expired) {
-      await supabase.from("push_subscriptions").delete().eq("id", sub.id);
+      await admin.from("push_subscriptions").delete().eq("id", sub.id);
     }
   }
 }
