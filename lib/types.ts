@@ -1,10 +1,19 @@
+export type Profile = {
+  id: string;
+  display_name: string;
+  avatar_url: string | null;
+  created_at: string;
+};
+
 export type Room = {
   id: string;
   created_at: string;
   user_a_id: string;
-  user_b_id: string;
+  user_b_id: string | null;
   rubric_id: string;
   status: "active" | "paused" | "closed";
+  invite_code: string;
+  invite_token: string;
 };
 
 export type MainMessage = {
@@ -64,4 +73,19 @@ export type ModeratorVerdict = {
   explanation: string;
   suggested_revision?: string;
   proposed_fact_updates: string[];
+};
+
+export type PushSubscription = {
+  id: string;
+  user_id: string;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  created_at: string;
+};
+
+export type RoomWithDetails = Room & {
+  other_user_display_name: string | null;
+  last_message_content: string | null;
+  last_message_at: string | null;
 };
