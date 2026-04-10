@@ -27,6 +27,9 @@ export function RoomCard({ room }: { room: RoomWithDetails }) {
           <CardTitle className="text-base">
             {room.other_user_display_name ?? "Waiting for someone to join..."}
           </CardTitle>
+          {room.topic && (
+            <p className="text-xs text-muted-foreground mt-0.5">{room.topic}</p>
+          )}
           <Badge variant={room.status === "active" ? "default" : "secondary"}>
             {room.status}
           </Badge>

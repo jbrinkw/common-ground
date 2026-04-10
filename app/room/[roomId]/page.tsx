@@ -21,6 +21,7 @@ export default function RoomPage() {
   const [facts, setFacts] = useState<EstablishedFact[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [roomTopic, setRoomTopic] = useState<string | null>(null);
   const [showFacts, setShowFacts] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
 
@@ -55,6 +56,7 @@ export default function RoomPage() {
       const isUserA = room.user_a_id === user.id;
       const otherProfile = isUserA ? room.user_b_profile : room.user_a_profile;
       setOtherUserName(otherProfile?.display_name ?? "Waiting for partner...");
+      setRoomTopic(room.topic ?? null);
 
       if (!otherProfile?.display_name) {
         setInviteCode(room.invite_code ?? null);
@@ -133,6 +135,7 @@ export default function RoomPage() {
               <h1 className="font-semibold text-sm sm:text-base">CommonGround</h1>
               <p className="text-xs text-muted-foreground truncate max-w-[200px] sm:max-w-none">
                 Talking with {otherUserName}
+                {roomTopic && <span className="ml-1">— {roomTopic}</span>}
               </p>
             </div>
           </div>

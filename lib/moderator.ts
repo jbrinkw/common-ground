@@ -60,6 +60,7 @@ export async function moderateMessage(args: {
   establishedFacts: string[];
   sideChatHistory?: Array<{ role: "user" | "ai"; content: string }>;
   rubricId: string;
+  topic?: string;
 }): Promise<ModeratorVerdict> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
 
@@ -72,6 +73,10 @@ export async function moderateMessage(args: {
 
   // Build the user message with all context
   const contextParts: string[] = [];
+
+  if (args.topic) {
+    contextParts.push(`## Room topic\n${args.topic}`);
+  }
 
   if (args.recentMainMessages.length > 0) {
     contextParts.push(

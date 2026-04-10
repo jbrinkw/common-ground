@@ -57,7 +57,7 @@ export async function submitDraft(
     // Verify user is a participant
     const { data: room } = await supabase
       .from("rooms")
-      .select("id")
+      .select("id, topic")
       .eq("id", roomId)
       .or(`user_a_id.eq.${userId},user_b_id.eq.${userId}`)
       .single();
@@ -110,6 +110,7 @@ export async function submitDraft(
       establishedFacts,
       sideChatHistory: sideChatHistory.length > 0 ? sideChatHistory : undefined,
       rubricId: "default_v1",
+      topic: room.topic ?? undefined,
     });
     const latencyMs = Date.now() - startTime;
 
